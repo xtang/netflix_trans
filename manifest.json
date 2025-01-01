@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Netflix Subtitle Translator",
+  "version": "1.0",
+  "description": "Translate Netflix subtitles via right-click menu.",
+  "permissions": [
+    "scripting",
+    "activeTab",
+    "storage",
+      "contextMenus"
+  ],
+    "icons": {
+        "48": "logo.png",
+        "96": "logo.png"
+    },
+    "host_permissions": [
+      "*://api.anthropic.com/*"
+    ],
+  "web_accessible_resources": [
+      {
+          "resources": [
+              "subtitletran.css",
+              "subtitletran.html"
+          ],
+          "matches": ["*://www.netflix.com/*"]
+      }
+  ],
+  "background": {
+      "service_worker": "background.js",
+      "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.netflix.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "options_page": "options.html"
+}

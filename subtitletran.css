@@ -1,0 +1,103 @@
+#subtitle-translate-div {
+  position: fixed;
+  bottom: 10%;
+  right: 5%;
+  max-width: 40%;
+  min-width: 300px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  border: 1px solid #eee;
+}
+
+#subtitle-translate-origin-text{
+  color: #6c757d;
+  font-size: 14px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: pre-wrap;
+  user-select: text;
+  margin-bottom: 10px;
+}
+
+#subtitle-translate-text {
+  color: #212529;
+  background-color: #fff;
+  transition: background-color 0.3s ease-in-out;
+  font-size: 16px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: pre-wrap;
+  user-select: text;
+  line-height: 1.6;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+
+#sub-gpt-operators {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#sub-gpt-close,
+#sub-gpt-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background-color: #e0e0e0;
+  color: #555;
+  border: none;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  font-size: 14px;
+}
+
+#sub-gpt-close::before {
+  content: "✕";
+  margin-right: 4px;
+}
+
+#sub-gpt-copy::before {
+  content: "📄";
+  margin-right: 4px;
+}
+
+#sub-gpt-close:hover,
+#sub-gpt-copy:hover {
+  background-color: #ccc;
+  color: #fff;
+}
+
+#sub-gpt-settings {
+    opacity: 0.5;
+    font-size: 12px;
+    color: #999;
+    margin-top: 10px;
+    margin-left: auto;
+    float: right;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    text-align: right;
+}
+
+#subtitle-translate-text.copied {
+  background-color: #c8e6c9;
+  transition: background-color 0.3s ease-in-out;
+}
+
+#subtitle-translate-text.copied::after {
+  content: " (已复制)";
+  color: #4caf50;
+  font-size: 0.9em;
+  margin-left: 5px;
+}

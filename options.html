@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Options</title>
+</head>
+<body>
+  <h2>Netflix Subtitle Translator Options</h2>
+  <label for="apiKey">API Key:</label>
+  <input type="text" id="apiKey" placeholder="Enter your API key">
+  <br><br>
+
+  <label style="display:none" for="apiUrl">API URL:</label>
+  <input style="display:none" type="text" id="apiUrl" placeholder="Enter your API URL">
+  <!--br><br-->
+
+  <label for="provider">Provider:</label>
+  <select id="provider">
+    <option value="openai">openai</option>
+    <option value="anthropic">anthropic</option>
+    <option value="deepseek">deepseek</option>
+    </select>
+  <br><br>
+
+  <label for="targetLanguage">Target Language:</label>
+  <select id="targetLanguage">
+    <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+    <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+    <option value="Spanish">Spanish</option>
+    <option value="Japanese">Japanese</option>
+    <option value="Korean">Korean</option>
+    <option value="Italian">Italian</option>
+    <option value="English">English</option>
+    <option value="French">French</option>
+    </select>
+  <button id="save">Save</button>
+  <script src="options.js"></script>
+</body>
+</html>
