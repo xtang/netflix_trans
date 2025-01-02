@@ -1,7 +1,7 @@
 // background.js
 import { LLMApiClient } from './llm-api-client.js';
 
-let targetLanguage = 'zh-CN'; // 默认目标语言
+let targetLanguage = 'Chinese (Simplified)'; // 默认目标语言
 let llmClient;
 
 const gptPromptPrefix = `
@@ -36,13 +36,14 @@ Subtitle Text:
 `;
 
 // 初始化 LLMApiClient
-function initializeLLMClient(provider, apiKey) {
+function initializeLLMClient(provider, apiKey, model) {
     chrome.storage.sync.get(["apiUrl"]).then((result) => {
         let apiURL = result.apiUrl; // 可选的 API URL
         const config = {
             apiKey: apiKey,
             provider: provider,
             apiURL: apiURL,
+            model: model,
         };
 
         llmClient = new LLMApiClient(config);
@@ -50,9 +51,9 @@ function initializeLLMClient(provider, apiKey) {
     })
 }
 
-chrome.storage.sync.get(['provider', 'apiKey', 'targetLanguage'], (data) => {
+chrome.storage.sync.get(['provider', 'apiKey', 'model', 'targetLanguage'], (data) => {
     const initialProvider = data.provider || 'openai'; // 默认值
-    initializeLLMClient(initialProvider, data.apiKey);
+    initializeLLMClient(initialProvider, data.apiKey, data.model);
     targetLanguage = data.targetLanguage || 'Chinese (Simplified)';
 });
 
@@ -61,15 +62,19 @@ chrome.storage.sync.onChanged.addListener((changes, namespace) => {
   const newProvider = changes.provider?.newValue;
   const newApiKey = changes.apiKey?.newValue;
   const newLanguage = changes.targetLanguage?.newValue;
+  const newModel = changes.model?.newValue;
 
   if (newProvider) {
       console.log('Provider 设置已更改为:', newProvider);
-      chrome.storage.sync.get(['apiKey'], (data) => {
-      initializeLLMClient(newProvider, data.apiKey);
+      chrome.storage.sync.get(['apiKey', 'model'], (data) => {
+      initializeLLMClient(newProvider, data.apiKey, data.model);
     });
   } else if (newApiKey && llmClient?.provider) {
     console.log('API Key 已更新');
-    initializeLLMClient(llmClient.provider, newApiKey);
+    initializeLLMClient(llmClient.provider, newApiKey, llmClient.model);
+  } else if (newModel && llmClient?.provider) {
+    console.log('Model 已更新');
+    initializeLLMClient(llmClient.provider, llmClient.apiKey, newModel);
   } else if (newLanguage) {
       targetLanguage = newLanguage;
   }
@@ -77,17 +82,17 @@ chrome.storage.sync.onChanged.addListener((changes, namespace) => {
 
 // 在 background script 启动时初始化 LLMClient
 chrome.runtime.onStartup.addListener(() => {
-  chrome.storage.sync.get(['provider', 'apiKey'], (data) => {
+  chrome.storage.sync.get(['provider', 'apiKey', 'model'], (data) => {
     const initialProvider = data.provider || 'openai'; // 默认值
-    initializeLLMClient(initialProvider, data.apiKey);
+    initializeLLMClient(initialProvider, data.apiKey, data.model);
   });
 });
 
 // 在安装或更新时初始化 LLMClient
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.get(['provider', 'apiKey'], (data) => {
+  chrome.storage.sync.get(['provider', 'apiKey', 'model'], (data) => {
     const initialProvider = data.provider || 'openai'; // 默认值
-    initializeLLMClient(initialProvider, data.apiKey);
+    initializeLLMClient(initialProvider, data.apiKey, data.model);
   });
 });
 
@@ -139,16 +144,10 @@ function grabSubtitle() {
 
 function translateSubtitle(text, targetLang, tabId) {
     if (llmClient) {
-        // chrome.tabs.sendMessage(tabId, {
-        //     message: "show_translation",
-        //     originalText: text,
-        //     text: 'Thinking...'
-        // });
         const params = { "targetLanguage": targetLanguage, "text": text};
         const prompt = gptPromptPrefix.replace(/{(\w+)}/g, (match, key) => {
             return params[key] || match; // 如果 params 中没有对应的 key，则保留原占位符
         });
-        // callOpenAI(text, gptPromptPrefix)
         llmClient.generateText({ prompt })
             .then(stream => {
                 const reader = stream.getReader();
