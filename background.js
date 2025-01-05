@@ -181,3 +181,24 @@ function translateSubtitle(text, targetLang, tabId) {
         console.log('LLMClient was not initialized');
     }
 }
+
+// 在文件底部添加以下代码
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "translate-subtitle") {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {action: "translate-subtitle"});
+    });
+  } else if (command === "close-translation") {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {action: "close-translation"});
+    });
+  }
+});
+
+// 添加处理翻译请求的监听器
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "perform-translation") {
+    // 使用现有的翻译逻辑处理字幕
+    translateSubtitle(request.text, targetLanguage, sender.tab.id);
+  }
+});

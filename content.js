@@ -30,7 +30,6 @@ function addCopy() {
             console.error('Error copying text to clipboard:', err);
         }
     });
-
 }
 
 function createPolishDiv() {
@@ -82,9 +81,29 @@ link.type = 'text/css';
 link.href = chrome.runtime.getURL('subtitletran.css');
 document.head.appendChild(link);
 
+function getSelectedSubtitle() {
+  const subtitleElement = document.querySelector('.player-timedtext');
+  if (subtitleElement) {
+    return subtitleElement.textContent;
+  }
+  return null;
+}
+
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.message === "show_translation") {
+  if (request.action === "translate-subtitle") {
+    const subtitle = getSelectedSubtitle();
+    if (subtitle) {
+        chrome.runtime.sendMessage({
+        action: "perform-translation",
+        text: subtitle
+      });
+    }
+  } else if (request.action === "close-translation") {
+    if (subtitleTranslationDiv) {
+      subtitleTranslationDiv.style.display = 'none';
+    }
+  } else if (request.message === "show_translation") {
     console.log("Content script received translation:", request.text);
-      showPolishDiv(request.text, request.originalText);
+    showPolishDiv(request.text, request.originalText);
   }
 });
