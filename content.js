@@ -39,6 +39,20 @@ function createPolishDiv() {
             .then(html => {
                 subtitleTranslationDiv = document.createElement('div');
                 subtitleTranslationDiv.innerHTML = html;
+                // 设置固定位置和样式
+                subtitleTranslationDiv.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    max-height: 80vh;
+                    width: 400px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                    z-index: 9999;
+                    overflow: hidden;
+                    transition: opacity 0.3s ease;
+                `;
                 document.body.appendChild(subtitleTranslationDiv);
                 addClose();
                 addCopy();
@@ -49,30 +63,75 @@ function createPolishDiv() {
                 reject(error);
             })
     });
-
 }
 
 function showPolishDiv(text, originalText) {
+    const showContent = () => {
+        const polishText = document.getElementById('subtitle-translate-text');
+        const originalTextP = document.getElementById("subtitle-translate-origin-text");
+        const contentWrapper = document.getElementById("subtitle-translate-content");
+
+        // 设置内容容器的样式
+        contentWrapper.style.cssText = `
+            max-height: calc(80vh - 80px); // 减去头部和按钮的高度
+            overflow-y: auto;
+            padding: 16px;
+            scrollbar-width: thin;
+        `;
+
+        // 添加平滑的过渡效果
+        subtitleTranslationDiv.style.opacity = '0';
+        subtitleTranslationDiv.style.display = 'block';
+
+        // 设置内容
+        originalTextP.textContent = originalText;
+        polishText.textContent = text;
+
+        // 淡入效果
+        requestAnimationFrame(() => {
+            subtitleTranslationDiv.style.opacity = '1';
+        });
+
+        // 自动滚动到顶部
+        contentWrapper.scrollTop = 0;
+    };
+
     if (!subtitleTranslationDiv) {
         createPolishDiv()
-            .then(() => {
-                const polishText = document.getElementById('subtitle-translate-text');
-                subtitleTranslationDiv.style.display = 'block';
-                polishText.textContent = text;
-                const originalTextP = document.getElementById("subtitle-translate-origin-text");
-                originalTextP.textContent = originalText
-            })
+            .then(showContent)
             .catch(error => {
                 console.error(error);
             });
     } else {
-        const polishText = document.getElementById('subtitle-translate-text');
-        subtitleTranslationDiv.style.display = 'block';
-        polishText.textContent = text;
-        const originalTextP = document.getElementById("subtitle-translate-origin-text");
-        originalTextP.textContent = originalText
+        showContent();
     }
 }
+
+// 添加自定义滚动条样式
+const scrollbarStyles = `
+    #subtitle-translate-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #subtitle-translate-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    #subtitle-translate-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    #subtitle-translate-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+`;
+
+// 注入滚动条样式
+const style = document.createElement('style');
+style.textContent = scrollbarStyles;
+document.head.appendChild(style);
 
 // add css
 const link = document.createElement('link');
@@ -95,10 +154,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse("pong");
         return;
     }
-    
-    // 处理其他消息...
-    if (request.message === "show_translation") {
-        // 现有的翻译显示逻辑
+
+    if (request.action === "translate-subtitle") {
+        const subtitle = getSelectedSubtitle();
+        if (subtitle) {
+            chrome.runtime.sendMessage({
+                action: "perform-translation",
+                text: subtitle
+            });
+        }
+    } else if (request.action === "close-translation") {
+        if (subtitleTranslationDiv) {
+            subtitleTranslationDiv.style.display = 'none';
+        }
+    } else if (request.message === "show_translation") {
+        console.log("Content script received translation:", request.text);
+        showPolishDiv(request.text, request.originalText);
     }
 });
 

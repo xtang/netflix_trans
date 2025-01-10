@@ -147,7 +147,7 @@ function grabSubtitle() {
 
 function translateSubtitle(text, targetLang, tabId) {
     if (llmClient) {
-        const params = { "targetLanguage": targetLanguage, "text": text};
+        const params = { "targetLanguage": targetLang, "text": text};
         const prompt = gptPromptPrefix.replace(/{(\w+)}/g, (match, key) => {
             return params[key] || match;
         });
@@ -165,7 +165,7 @@ function translateSubtitle(text, targetLang, tabId) {
                         }
                         const content = value;
                         accumulatedResponse += content;
-                        
+                        console.log("accumulatedResponse:", accumulatedResponse);
                         // 添加错误处理
                         chrome.tabs.sendMessage(tabId, {
                             message: "show_translation",
