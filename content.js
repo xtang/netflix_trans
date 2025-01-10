@@ -89,21 +89,21 @@ function getSelectedSubtitle() {
   return null;
 }
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === "translate-subtitle") {
-    const subtitle = getSelectedSubtitle();
-    if (subtitle) {
-        chrome.runtime.sendMessage({
-        action: "perform-translation",
-        text: subtitle
-      });
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // 用于检查 content script 是否已加载的 ping 消息
+    if (request.type === "ping") {
+        sendResponse("pong");
+        return;
     }
-  } else if (request.action === "close-translation") {
-    if (subtitleTranslationDiv) {
-      subtitleTranslationDiv.style.display = 'none';
+    
+    // 处理其他消息...
+    if (request.message === "show_translation") {
+        // 现有的翻译显示逻辑
     }
-  } else if (request.message === "show_translation") {
-    console.log("Content script received translation:", request.text);
-    showPolishDiv(request.text, request.originalText);
-  }
+});
+
+// 确保 DOM 加载完成后再初始化
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("Content script DOM ready");
+    // 初始化相关代码...
 });

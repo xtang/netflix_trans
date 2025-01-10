@@ -13,13 +13,13 @@
   "commands": {
     "translate-subtitle": {
       "suggested_key": {
-        "default": "Ctrl+Shift+Y"
+        "default": "Alt+Shift+E"
       },
       "description": "快速翻译字幕"
     },
     "close-translation": {
       "suggested_key": {
-        "default": "Ctrl+Shift+U"
+        "default": "Alt+Shift+W"
       },
       "description": "关闭翻译窗口"
     }

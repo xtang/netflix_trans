@@ -96,12 +96,15 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// 创建右键菜单项
-chrome.contextMenus.create({
-  id: "translate-netflix-subtitle",
-  title: "Translate Subtitle",
-  contexts: ["page"], // 只在页面上显示右键菜单
-  documentUrlPatterns: ["*://www.netflix.com/*"] // 限定在 Netflix 页面显示
+// 在创建菜单之前，先移除已存在的菜单项
+chrome.contextMenus.removeAll(() => {
+  // 在回调函数中创建新的菜单项
+  chrome.contextMenus.create({
+    id: "translate-netflix-subtitle",
+    title: "Translate Subtitle",
+    contexts: ["page"],
+    documentUrlPatterns: ["*://www.netflix.com/*"]
+  });
 });
 
 // 监听右键菜单点击事件
@@ -146,7 +149,7 @@ function translateSubtitle(text, targetLang, tabId) {
     if (llmClient) {
         const params = { "targetLanguage": targetLanguage, "text": text};
         const prompt = gptPromptPrefix.replace(/{(\w+)}/g, (match, key) => {
-            return params[key] || match; // 如果 params 中没有对应的 key，则保留原占位符
+            return params[key] || match;
         });
         llmClient.generateText({ prompt })
             .then(stream => {
@@ -162,10 +165,26 @@ function translateSubtitle(text, targetLang, tabId) {
                         }
                         const content = value;
                         accumulatedResponse += content;
+                        
+                        // 添加错误处理
                         chrome.tabs.sendMessage(tabId, {
                             message: "show_translation",
                             originalText: text,
-                            text: accumulatedResponse // 发送累积的翻译
+                            text: accumulatedResponse
+                        }).catch(error => {
+                            // 如果发送失败，尝试重新注入 content script
+                            console.log("重新注入 content script");
+                            chrome.scripting.executeScript({
+                                target: { tabId: tabId },
+                                files: ['content.js']
+                            }).then(() => {
+                                // 重新注入后再次尝试发送消息
+                                chrome.tabs.sendMessage(tabId, {
+                                    message: "show_translation",
+                                    originalText: text,
+                                    text: accumulatedResponse
+                                });
+                            });
                         });
                         read();
                     }).catch(error => {
@@ -184,15 +203,23 @@ function translateSubtitle(text, targetLang, tabId) {
 
 // 在文件底部添加以下代码
 chrome.commands.onCommand.addListener((command) => {
-  if (command === "translate-subtitle") {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, {action: "translate-subtitle"});
-    });
-  } else if (command === "close-translation") {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, {action: "close-translation"});
-    });
-  }
+    if (command === "translate-subtitle" || command === "close-translation") {
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if (tabs[0]) {
+                // 先检查 content script 是否已注入
+                chrome.tabs.sendMessage(tabs[0].id, {type: "ping"}).catch(() => {
+                    // 如果发送失败，重新注入 content script
+                    return chrome.scripting.executeScript({
+                        target: { tabId: tabs[0].id },
+                        files: ['content.js']
+                    });
+                }).then(() => {
+                    // 发送实际的命令
+                    chrome.tabs.sendMessage(tabs[0].id, {action: command});
+                });
+            }
+        });
+    }
 });
 
 // 添加处理翻译请求的监听器
