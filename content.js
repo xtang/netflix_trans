@@ -32,6 +32,89 @@ function addCopy() {
     });
 }
 
+function addDragFeature() {
+    const dragHandle = document.querySelector('#sub-gpt-operators');
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    function dragStart(e) {
+        // 如果点击的是操作按钮，则不启动拖拽
+        if (e.target.id === 'sub-gpt-close' || e.target.id === 'sub-gpt-copy') {
+            return;
+        }
+
+        if (e.type === "touchstart") {
+            initialX = e.touches[0].clientX - xOffset;
+            initialY = e.touches[0].clientY - yOffset;
+        } else {
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+        }
+
+        if (e.target === dragHandle) {
+            isDragging = true;
+        }
+    }
+
+    function dragEnd(e) {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+
+            if (e.type === "touchmove") {
+                currentX = e.touches[0].clientX - initialX;
+                currentY = e.touches[0].clientY - initialY;
+            } else {
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+            }
+
+            xOffset = currentX;
+            yOffset = currentY;
+
+            // // 获取窗口尺寸和元素尺寸
+            // const windowWidth = window.innerWidth;
+            // const windowHeight = window.innerHeight;
+            // const element = subtitleTranslationDiv;
+            // const elementRect = element.getBoundingClientRect();
+
+            // // 允许元素最多移出屏幕一半的宽度/高度
+            // const maxX = windowWidth - elementRect.width / 2;
+            // const maxY = windowHeight - elementRect.height / 2;
+            // const minX = -elementRect.width / 2;
+            // const minY = -elementRect.height / 2;
+
+            // currentX = Math.min(Math.max(currentX, minX), maxX);
+            // currentY = Math.min(Math.max(currentY, minY), maxY);
+
+            setTranslate(currentX, currentY, subtitleTranslationDiv);
+        }
+    }
+
+    function setTranslate(xPos, yPos, el) {
+        el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+    }
+
+    // 添加事件监听器
+    dragHandle.addEventListener("touchstart", dragStart, false);
+    dragHandle.addEventListener("touchend", dragEnd, false);
+    dragHandle.addEventListener("touchmove", drag, false);
+
+    dragHandle.addEventListener("mousedown", dragStart, false);
+    document.addEventListener("mousemove", drag, false);
+    document.addEventListener("mouseup", dragEnd, false);
+}
+
 function createPolishDiv() {
     return new Promise((resolve, reject) => {
         fetch(chrome.runtime.getURL("subtitletran.html"))
@@ -52,10 +135,12 @@ function createPolishDiv() {
                     z-index: 9999;
                     overflow: hidden;
                     transition: opacity 0.3s ease;
+                    transform: translate3d(0, 0, 0);
                 `;
                 document.body.appendChild(subtitleTranslationDiv);
                 addClose();
                 addCopy();
+                addDragFeature(); // 添加拖拽功能
                 resolve();
             })
             .catch(error => {
@@ -168,7 +253,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             subtitleTranslationDiv.style.display = 'none';
         }
     } else if (request.message === "show_translation") {
-        console.log("Content script received translation:", request.text);
         showPolishDiv(request.text, request.originalText);
     }
 });

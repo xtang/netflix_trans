@@ -165,7 +165,6 @@ function translateSubtitle(text, targetLang, tabId) {
                         }
                         const content = value;
                         accumulatedResponse += content;
-                        console.log("accumulatedResponse:", accumulatedResponse);
                         // 添加错误处理
                         chrome.tabs.sendMessage(tabId, {
                             message: "show_translation",

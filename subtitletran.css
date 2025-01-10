@@ -8,8 +8,23 @@
   padding: 12px;
   border-bottom: 1px solid #eee;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   background: #f8f8f8;
+  cursor: move;
+}
+
+#sub-gpt-drag-handle {
+  color: #999;
+  font-size: 16px;
+  padding: 0 8px;
+  cursor: move;
+  user-select: none;
+}
+
+.operator-buttons {
+  display: flex;
+  gap: 8px;
 }
 
 #sub-gpt-close,
