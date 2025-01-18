@@ -1,6 +1,8 @@
 console.log("Content script loaded on Netflix.");
 
 let subtitleTranslationDiv = null;
+let contentObserver = null;
+let scrollIndicator = null;
 
 function addClose() {
     const gptCloseBtn = document.querySelector('#sub-gpt-close');
@@ -158,61 +160,88 @@ function showPolishDiv(text, originalText) {
 
         // 设置内容容器的样式
         contentWrapper.style.cssText = `
-            max-height: calc(50vh - 80px);
+            max-height: calc(40vh - 80px);
+            min-height: calc(40vh - 80px);
             overflow-y: auto;
             padding: 16px;
             scrollbar-width: thin;
             display: flex;
             flex-direction: column;
             position: relative;
+            box-sizing: border-box;
         `;
 
-        // Create and add scroll indicator
-        const scrollIndicator = document.createElement('div');
-        scrollIndicator.style.cssText = `
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 30px;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.5));
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 2s ease;
-        `;
-        contentWrapper.appendChild(scrollIndicator);
 
-        // Show/hide scroll indicator based on scroll position
-        const updateScrollIndicator = () => {
-            const isScrollable = contentWrapper.scrollHeight > contentWrapper.clientHeight;
-            const isBottom = contentWrapper.scrollTop + contentWrapper.clientHeight >= contentWrapper.scrollHeight;
-            scrollIndicator.style.opacity = isScrollable && !isBottom ? '1' : '0';
-        };
+        // Create observer only if it doesn't exist
+        if (!contentObserver) {
+            console.log('Creating new MutationObserver');
+            contentObserver = new MutationObserver((mutations) => {
+                console.log('MutationObserver triggered', mutations.length, 'changes');
+                
+                // Add a small delay to ensure content has been rendered
+                setTimeout(() => {
+                    // Force layout recalculation
+                    contentWrapper.style.display = 'none';
+                    contentWrapper.offsetHeight; // Force reflow
+                    contentWrapper.style.display = 'flex';
+                    
+                    
+                    // Check if the content change is from the polishText element
+                    const isPolishTextChanged = mutations.some(mutation => {
+                        const isRelated = mutation.target === polishText || polishText.contains(mutation.target);
+                        console.log('Mutation target:', mutation.target, 'isRelated:', isRelated,
+                                  'scrollHeight:', contentWrapper.scrollHeight,
+                                  'clientHeight:', contentWrapper.clientHeight);
+                        return isRelated;
+                    });
+                    
+                    console.log('isPolishTextChanged:', isPolishTextChanged);
+                    
+                    // If the change is in polishText, auto scroll to bottom
+                    if (isPolishTextChanged && contentWrapper.scrollHeight > contentWrapper.clientHeight) {
+                        console.log('Scrolling to bottom');
+                        contentWrapper.scrollTop = contentWrapper.scrollHeight;
+                        console.log('After scroll - scrollTop:', contentWrapper.scrollTop);
+                    }
+                }, 50); // Increased delay to ensure content is rendered
+            });
+            
+            // Disconnect existing observer if any
+            contentObserver.disconnect();
+            
+            // Observe the content wrapper
+            console.log('Starting observation on contentWrapper');
+            contentObserver.observe(contentWrapper, { 
+                childList: true, 
+                subtree: true, 
+                characterData: true,
+                characterDataOldValue: true 
+            });
+        }
 
-        contentWrapper.addEventListener('scroll', updateScrollIndicator);
-        // Also update on content change
-        const observer = new MutationObserver(updateScrollIndicator);
-        observer.observe(contentWrapper, { childList: true, subtree: true, characterData: true });
-
-        // Initial check
-        updateScrollIndicator();
-
-        // 设置文本元素的样式，确保它们不会超出容器
+        // 设置文本元素的样式
         originalTextP.style.cssText = `
             margin: 0;
             padding-bottom: 8px;
             word-wrap: break-word;
+            flex: 0 0 auto;
+            width: 100%;
+            box-sizing: border-box;
         `;
 
         polishText.style.cssText = `
             margin: 0;
             word-wrap: break-word;
+            flex: 1 0 auto;
+            width: 100%;
+            box-sizing: border-box;
         `;
 
         // 添加平滑的过渡效果
         subtitleTranslationDiv.style.opacity = '0';
         subtitleTranslationDiv.style.display = 'block';
 
+        console.log('Setting content - original:', originalText, 'translated:', text);
         // 设置内容
         originalTextP.textContent = originalText;
         polishText.textContent = text;
@@ -221,9 +250,6 @@ function showPolishDiv(text, originalText) {
         requestAnimationFrame(() => {
             subtitleTranslationDiv.style.opacity = '1';
         });
-
-        // 自动滚动到顶部
-        contentWrapper.scrollTop = 0;
     };
 
     if (!subtitleTranslationDiv) {
