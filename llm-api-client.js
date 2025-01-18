@@ -151,7 +151,7 @@ class LLMApiClient {
         const body = JSON.stringify({
             model: defaultModel,
             messages: [{ role: 'user', content: options.prompt }],
-            temperature: options.temperature,
+            temperature: options.temperature || 1.3,
             max_tokens: options.max_tokens || 1024,
             stream: true // 启用流式传输
         });
